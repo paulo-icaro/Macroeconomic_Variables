@@ -15,6 +15,16 @@
 # ==================== #
 # === 1. Libraries === #
 # ==================== #
+
+# ------------------------------ #
+# --- 1.1 Auxiliary Packages --- #
+# ------------------------------ #
+#source('https://raw.githubusercontent.com/paulo-icaro/Package_Requestor/refs/heads/main/Package_Requestor.R')
+
+# --------------------- #
+# --- 1.2 Libraries --- #
+# --------------------- #
+#package_requestor(c('plumber', 'dplyr', 'readxl'))   # Run only if the packages are not installed
 library(plumber)
 library(dplyr)
 library(readxl)
@@ -57,18 +67,21 @@ macroeconomic_dataset =
 # ---------------------- #
 
 # --- 3.2.1 Tag - Price Index --- #
-#* @tag "Índice de Preços ao Consumidor Amplo (IPCA)"
+# Warnings:
+# - @get: It's a method define by the Endpoint. In this case the get method is chosen
+# - @serializer: Defines how Plumber returns results to the client (default JSON)
+
 #* @get /ipca
-#* @serializer json
+#* @serializer json       
+#* @tag "Índice de Preços ao Consumidor Amplo (IPCA)"
 #* @param serie Informe o código da série de dados desejada
 #* @param frequencia Frequência desejada (Ex: Anual, Mensal, Bimestral, ...)
 #* @param periodo Intervalo de dados (Ex: 2010-2020, 2010M01-2020M06, 2010B01-2020B03, ...)
-
 
 function(serie, frequencia, periodo){
   macroeconomic_dataset
 }
 
 
-# Caso deseje executar direto
+# Run this in case you want run the API
 # pr(file = paste0(getwd(), '/API_Structure.R')) %>% pr_run()
