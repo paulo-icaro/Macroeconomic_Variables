@@ -28,17 +28,14 @@
 library(plumber)
 library(dplyr)
 library(readxl)
+library(lubridate)
 
 
 
 # ================================ #
 # === 2. Macroeconomic Dataset === #
 # ================================ #
-macroeconomic_dataset = 
-  read_excel(path = 'Dataset/Dataset.xlsx',
-             sheet = 'Data',
-             range = cell_cols('A:AK'),
-             col_names = TRUE)
+source('https://raw.githubusercontent.com/paulo-icaro/Macroeconomic_Variables/refs/heads/master/API_Dataset.R')
 
 
 
@@ -57,8 +54,7 @@ macroeconomic_dataset =
 # ---------------------- #
 # Warnings:
 # i) Don't forget to associate each @apiTag element with its respective @tag element, unless you want the default name
-#* @apiTag "Índice de Preços ao Consumidor Amplo (IPCA)" Acesso a série do Índice de Preços ao Consumidor Amplo
-
+#* @apiTag "Séries Macroeconômicas Mensais" Acesso as séries macroeconômicas mensais
 
 
 
@@ -66,20 +62,97 @@ macroeconomic_dataset =
 # --- 3.2 Minor Tags --- #
 # ---------------------- #
 
-# --- 3.2.1 Tag - Price Index --- #
+# --- 3.2.1 Tag - Monthly Series --- #
 # Warnings:
-# - @get: It's a method define by the Endpoint. In this case the get method is chosen
+# - @get: It's a method defined by the Endpoint. In this case the get method is chosen
 # - @serializer: Defines how Plumber returns results to the client (default JSON)
 
-#* @get /ipca
+#* @get /macro_series_mensais
 #* @serializer json       
-#* @tag "Índice de Preços ao Consumidor Amplo (IPCA)"
-#* @param serie Informe o código da série de dados desejada
-#* @param frequencia Frequência desejada (Ex: Anual, Mensal, Bimestral, ...)
-#* @param periodo Intervalo de dados (Ex: 2010-2020, 2010M01-2020M06, 2010B01-2020B03, ...)
+#* @tag "Séries Macroeconômicas Mensais"
+#* @param series Informe o código da(s) série(s) de dados desejada(s)
+#* @param periodo Intervalo de dados (Ex: 2010-2020)
 
-function(serie, frequencia, periodo){
-  macroeconomic_dataset
+function(series = 'tudo', periodo = 'tudo'){
+  
+  # --- Default --- #
+  macroeconomic_dataset = monthly_macro_series
+  
+  
+  # --- Filtering Series --- #
+  if(series != 'tudo'){
+    
+    # This line avoids unecessary computing each time the filter is activated
+    series_vec = unlist(strsplit(series, ","))
+    
+    # Database
+    macroeconomic_dataset = 
+      macroeconomic_dataset %>%
+      select(data, all_of(series_vec))
+  }
+ 
+ 
+  # --- Filtering Period --- #
+  if(periodo != 'tudo'){
+    
+    # These lines avoid unecessary computing each time the filter is activated
+    initial_period = as.numeric(substr(periodo, 1, 4))    
+    final_period = as.numeric(substr(periodo, 6, 9))
+    start_date = as.Date(paste0(initial_period, '-01-01'))
+    end_date = as.Date(paste0(final_period, '-12-31'))
+    
+    # Database
+    macroeconomic_dataset =
+      macroeconomic_dataset %>%
+      filter(data >= start_date, data <= end_date)
+  }
+  
+  return(macroeconomic_dataset)
+}
+
+
+# --- 3.2.2 Tag - Quartely Series --- #
+#* @get /macro_series_trimestrais
+#* @serializer json       
+#* @tag "Séries Macroeconômicas Trimestrais"
+#* @param series Informe o código da(s) série(s) de dados desejada(s)
+#* @param periodo Intervalo de dados (Ex: 2015-2025)
+
+function(series = 'tudo', periodo = 'tudo'){
+  
+  # --- Default --- #
+  macroeconomic_dataset = quartely_macro_series
+  
+  
+  # --- Filtering Series --- #
+  if(series != 'tudo'){
+    
+    # This line avoids unecessary computing each time the filter is activated
+    series_vec = unlist(strsplit(series, ","))
+    
+    # Database
+    macroeconomic_dataset = 
+      macroeconomic_dataset %>%
+      select(data, all_of(series_vec))
+  }
+  
+  
+  # --- Filtering Period --- #
+  if(periodo != 'tudo'){
+    
+    # These lines avoid unecessary computing each time the filter is activated
+    initial_period = as.numeric(substr(periodo, 1, 4))    
+    final_period = as.numeric(substr(periodo, 6, 9))
+    start_date = as.Date(paste0(initial_period, '-01-01'))
+    end_date = as.Date(paste0(final_period, '-12-31'))
+    
+    # Database
+    macroeconomic_dataset =
+      macroeconomic_dataset %>%
+      filter(data >= start_date, data <= end_date)
+  }
+  
+  return(macroeconomic_dataset)
 }
 
 
