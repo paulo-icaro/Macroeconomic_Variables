@@ -26,9 +26,6 @@
 # --- Quartely Databases --- #
 # -------------------------- #
 
-# ------------------- #
-# --- Series Code --- #
-# ------------------- #
 
 
 
@@ -115,3 +112,4 @@ patterns = c('^cod', '^name', '^ipeadata', '^bacen')
 for(i in seq_along(patterns)){
   rm(list = ls(pattern = patterns[i]))
 }
+rm(patterns, i)
