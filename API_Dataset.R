@@ -91,14 +91,14 @@ sidra_query_list[['sal_medio']] = list(table = '6470', time_interval = '201001-2
 
 
 # --- Extraction --- #
-sidra_quartely_dataset = sidra_query(sidra_query_list, TRUE)
 ipeadata_quartely_dataset = ipeadata_query(cod_ipeadata_quartely_series, name_ipeadata_quartely_series, as.character(2010:2025))
+sidra_quartely_dataset = sidra_query(sidra_query_list, TRUE)
 #bacen_quartely_dataset = bacen_query(cod_bacen_quartely_series, name_bacen_quartely_series, '01/01/2010', '31/12/2025')
 
 
 # --- Date Adjustment --- #
-sidra_quartely_dataset = sidra_quartely_dataset %>% mutate(data = paste0(substr(data, 1, 4), '_Q', substr(data, 6, 6)))
 ipeadata_quartely_dataset = ipeadata_quartely_dataset %>% mutate(data = as.Date(data))
+sidra_quartely_dataset = sidra_quartely_dataset %>% mutate(data = paste0(substr(data, 1, 4), '_Q', substr(data, 6, 6)))
 #bacen_quartely_dataset = bacen_quartely_dataset %>% mutate(data = as.Date(data, tryFormats = c('%d/%m/%Y')))
 
 
@@ -147,6 +147,7 @@ db_transform_sidra_quartely_end = cumulative_transform('final_period', 'quartely
 # --- Ipeadata --- #
 db_transform_ipeadata_quartely = left_join(x = db_transform_ipeadata_quartely_sum, y = db_transform_ipeadata_quartely_cumrate, by = 'data')
 db_transform_ipeadata_quartely = left_join(x = db_transform_ipeadata_quartely, y = db_transform_ipeadata_quartely_mean, by = 'data')
+db_transform_ipeadata_quartely = left_join(x = db_transform_ipeadata_quartely, y = db_transform_ipeadata_quartely_none, by = 'data')
 
 
 # --- Bacen --- #
