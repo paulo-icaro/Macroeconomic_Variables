@@ -36,8 +36,7 @@ source('https://raw.githubusercontent.com/paulo-icaro/Bacen_API/main/Bacen_Query
 source('https://raw.githubusercontent.com/paulo-icaro/Ipeadata_API/refs/heads/main/Ipeadata_Query.R')
 source('https://raw.githubusercontent.com/paulo-icaro/Sidra_API/refs/heads/main/Sidra_Query.R')
 source('https://raw.githubusercontent.com/paulo-icaro/Variables_Frequency_Transforming/refs/heads/main/Variables_Frequency_Transforming.R')
-library(dplyr)
-
+library(tidyr)
 
 
 
@@ -55,8 +54,8 @@ library(dplyr)
 cod_ipeadata_monthly_series = c('BM12_PIB12', 'FUNCEX12_XVT12', 'SECEX12_MVTOT12', 'BM12_ERV12', 'PRECOS12_IPCA12', 'PAN12_TJOVER12')
 name_ipeadata_monthly_series = c('pib', 'export', 'import', 'tx_cambio_venda', 'ipca', 'tx_jur')
 
-cod_bacen_monthly_series = c('28561', '4649', '28763', '4449', '11428', '11752')
-name_bacen_monthly_series = c('uci_dessaz', 'res_prim', 'empregos', 'ipca_adm', 'inf_livre', 'tx_cambio_real')
+cod_bacen_monthly_series = c('28561', '4649', '28763', '4449', '11428', '11752', '5793')
+name_bacen_monthly_series = c('uci_dessaz', 'res_prim', 'empregos', 'ipca_adm', 'inf_livre', 'tx_cambio_real', 'nfsp_spub_acum_pib%')
 
 sidra_query_list = vector(mode = 'list')
 sidra_query_list[['ipca_%']] = list(table = '1737', time_interval = '201001-202512', variables = '2263', territorial_level = 'n1/all', headers = FALSE)
@@ -112,8 +111,14 @@ name_bacen_yearly_series = c('meta_inf')
 
 # --- Extraction --- #
 bacen_yearly_dataset = bacen_query(cod_bacen_yearly_series, name_bacen_yearly_series, '01/01/2010', '31/12/2025')
+bacen_yearly_dataset[c(-1)] = lapply(X = bacen_yearly_dataset[c(-1)], FUN = as.numeric)
 
 
+# --- Data Adjustment --- #
+bacen_yearly_dataset = bacen_yearly_dataset %>% mutate(data = as.Date(data, tryFormats = c('%d/%m/%Y')))
+
+# --- Frequency Conversion --- #
+bacen_yearly_to_quartely_dataset = cumulative_transform('taxa_equiv', 'quartely', bacen_yearly_dataset[c(1,2)], change_date = TRUE)
 
 
 
@@ -129,13 +134,16 @@ db_transform_ipeadata_quartely_none = cumulative_transform('none', 'quartely', i
 
 
 # --- Monthly Bacen Database --- #
-db_transform_bacen_quartely_end = cumulative_transform('final_period', 'quartely', bacen_monthly_dataset[c(1,4)], change_date = TRUE)
+db_transform_bacen_quartely_end = cumulative_transform('final_period', 'quartely', bacen_monthly_dataset[c(1,4,7)], change_date = TRUE)
 db_transform_bacen_quartely_cumrate = cumulative_transform('cumulative_rate', 'quartely', bacen_monthly_dataset[c(1,5,6)], change_date = TRUE)
 db_transform_bacen_quartely_mean = cumulative_transform('mean', 'quartely', bacen_monthly_dataset[c(1,7)], change_date = TRUE)
 
 # --- Monthly Sidra Database --- #
 db_transform_sidra_quartely_end = cumulative_transform('final_period', 'quartely', sidra_monthly_dataset[c(1,2)], change_date = TRUE)
 
+
+# --- Yearly Bacen Database --- #
+db_transform_bacen_
 
 
 
@@ -153,6 +161,8 @@ db_transform_ipeadata_quartely = left_join(x = db_transform_ipeadata_quartely, y
 # --- Bacen --- #
 db_transform_bacen_quartely = left_join(x = db_transform_bacen_quartely_end, y = db_transform_bacen_quartely_cumrate, by = 'data')
 db_transform_bacen_quartely = left_join(x = db_transform_bacen_quartely, y = db_transform_bacen_quartely_mean, by = 'data')
+db_transform_bacen_quartely = left_join(x = db_transform_bacen_quartely, y = bacen_yearly_to_quartely_dataset, by = 'data')
+db_transform_bacen_quartely = db_transform_bacen_quartely %>% fill(meta_inf, .direction = 'down')
 
 # --- Sidra --- #
 db_transform_sidra_quartely = left_join(x = db_transform_sidra_quartely_end, y = sidra_quartely_dataset, by = 'data')
